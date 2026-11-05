@@ -1,0 +1,20 @@
+{
+  "name": "tabletop-gaming-club",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.20.5"
+  },
+  "scripts": {
+    "dev:front": "npm --prefix frontend run dev",
+    "dev:back": "npm --prefix backend run dev",
+    "db:up": "podman compose up -d",
+    "db:down": "podman compose down",
+    "lint": "npm --prefix backend run lint && npm --prefix frontend run lint",
+    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
+    "format": "npm --prefix backend run format && npm --prefix frontend run format",
+    "format:check": "npm --prefix backend run format:check && npm --prefix frontend run format:check",
+    "check": "npm run lint && npm run typecheck && npm run format:check",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build"
+  }
+}
