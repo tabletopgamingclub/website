@@ -3,6 +3,9 @@ import "dotenv/config";
 const NODE_ENVS = ["development", "production", "test"] as const;
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"] as const;
 const DEFAULT_CORS_ORIGIN = "http://localhost:3001";
+const DEFAULT_ACCESS_TOKEN_TTL = "7d";
+const DEFAULT_REFRESH_TOKEN_TTL = "7d";
+const DURATION_PATTERN = /^\d+[smhd]$/;
 
 type NodeEnv = (typeof NODE_ENVS)[number];
 type LogLevel = (typeof LOG_LEVELS)[number];
@@ -104,6 +107,34 @@ function requireDatabaseUrl(value: string | undefined): string {
   return value;
 }
 
+function requireJwtSecret(name: string, value: string | undefined): string {
+  const secret = value?.trim();
+
+  if (!secret) {
+    throw new Error(
+      `${name} es obligatoria. Generá una con \`openssl rand -base64 48\` y agregala a backend/.env.`,
+    );
+  }
+
+  if (secret.length < 32) {
+    throw new Error(`${name} debe tener al menos 32 caracteres.`);
+  }
+
+  return secret;
+}
+
+function parseTokenTtl(name: string, value: string | undefined, defaultValue: string): string {
+  const ttl = value?.trim() || defaultValue;
+
+  if (!DURATION_PATTERN.test(ttl)) {
+    throw new Error(
+      `${name} inválido: "${ttl}". Usá un número seguido de s, m, h o d, por ejemplo 7d.`,
+    );
+  }
+
+  return ttl;
+}
+
 const nodeEnv = parseNodeEnv(process.env.NODE_ENV);
 
 export const env = {
@@ -112,6 +143,20 @@ export const env = {
   logLevel: parseLogLevel(process.env.LOG_LEVEL),
   corsOrigins: parseCorsOrigins(process.env.CORS_ORIGIN, nodeEnv),
   databaseUrl: requireDatabaseUrl(process.env.DATABASE_URL),
+  jwt: {
+    accessSecret: requireJwtSecret("JWT_ACCESS_SECRET", process.env.JWT_ACCESS_SECRET),
+    accessExpiresIn: parseTokenTtl(
+      "JWT_ACCESS_EXPIRES_IN",
+      process.env.JWT_ACCESS_EXPIRES_IN,
+      DEFAULT_ACCESS_TOKEN_TTL,
+    ),
+    refreshSecret: requireJwtSecret("JWT_REFRESH_SECRET", process.env.JWT_REFRESH_SECRET),
+    refreshExpiresIn: parseTokenTtl(
+      "JWT_REFRESH_EXPIRES_IN",
+      process.env.JWT_REFRESH_EXPIRES_IN,
+      DEFAULT_REFRESH_TOKEN_TTL,
+    ),
+  },
 } as const;
 
 export const isDevelopment = nodeEnv === "development";
