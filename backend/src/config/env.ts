@@ -4,6 +4,7 @@ const NODE_ENVS = ["development", "production", "test"] as const;
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"] as const;
 const DEFAULT_CORS_ORIGIN = "http://localhost:3001";
 const DEFAULT_ACCESS_TOKEN_TTL = "7d";
+const DEFAULT_REFRESH_TOKEN_TTL = "7d";
 const DURATION_PATTERN = /^\d+[smhd]$/;
 
 type NodeEnv = (typeof NODE_ENVS)[number];
@@ -106,28 +107,28 @@ function requireDatabaseUrl(value: string | undefined): string {
   return value;
 }
 
-function requireJwtSecret(value: string | undefined): string {
+function requireJwtSecret(name: string, value: string | undefined): string {
   const secret = value?.trim();
 
   if (!secret) {
     throw new Error(
-      "JWT_ACCESS_SECRET es obligatoria. Generá una con `openssl rand -base64 48` y agregala a backend/.env.",
+      `${name} es obligatoria. Generá una con \`openssl rand -base64 48\` y agregala a backend/.env.`,
     );
   }
 
   if (secret.length < 32) {
-    throw new Error("JWT_ACCESS_SECRET debe tener al menos 32 caracteres.");
+    throw new Error(`${name} debe tener al menos 32 caracteres.`);
   }
 
   return secret;
 }
 
-function parseTokenTtl(value: string | undefined): string {
-  const ttl = value?.trim() ?? DEFAULT_ACCESS_TOKEN_TTL;
+function parseTokenTtl(name: string, value: string | undefined, defaultValue: string): string {
+  const ttl = value?.trim() || defaultValue;
 
   if (!DURATION_PATTERN.test(ttl)) {
     throw new Error(
-      `JWT_ACCESS_EXPIRES_IN inválido: "${ttl}". Usá un número seguido de s, m, h o d, por ejemplo 7d.`,
+      `${name} inválido: "${ttl}". Usá un número seguido de s, m, h o d, por ejemplo 7d.`,
     );
   }
 
@@ -143,8 +144,18 @@ export const env = {
   corsOrigins: parseCorsOrigins(process.env.CORS_ORIGIN, nodeEnv),
   databaseUrl: requireDatabaseUrl(process.env.DATABASE_URL),
   jwt: {
-    accessSecret: requireJwtSecret(process.env.JWT_ACCESS_SECRET),
-    accessExpiresIn: parseTokenTtl(process.env.JWT_ACCESS_EXPIRES_IN),
+    accessSecret: requireJwtSecret("JWT_ACCESS_SECRET", process.env.JWT_ACCESS_SECRET),
+    accessExpiresIn: parseTokenTtl(
+      "JWT_ACCESS_EXPIRES_IN",
+      process.env.JWT_ACCESS_EXPIRES_IN,
+      DEFAULT_ACCESS_TOKEN_TTL,
+    ),
+    refreshSecret: requireJwtSecret("JWT_REFRESH_SECRET", process.env.JWT_REFRESH_SECRET),
+    refreshExpiresIn: parseTokenTtl(
+      "JWT_REFRESH_EXPIRES_IN",
+      process.env.JWT_REFRESH_EXPIRES_IN,
+      DEFAULT_REFRESH_TOKEN_TTL,
+    ),
   },
 } as const;
 
