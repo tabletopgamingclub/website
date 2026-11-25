@@ -8,6 +8,7 @@ API REST del Tabletop Gaming Club.
 - TypeScript en modo ESM
 - Express 5
 - Prisma 7 con PostgreSQL y `@prisma/adapter-pg`
+- Autenticación con JWT (HS256) y contraseñas con Argon2id
 - Pino para logging
 
 ## Requisitos
@@ -47,6 +48,8 @@ Luego, en `backend/`:
 ```bash
 cd backend
 cp .env.example .env
+# Completar JWT_ACCESS_SECRET en .env, por ejemplo:
+# openssl rand -base64 48
 npm install
 npm run db:migrate
 npm run db:seed
@@ -57,14 +60,16 @@ La API queda disponible en `http://localhost:3000/api`.
 
 ## Variables de entorno
 
-| Variable              | Descripción                                                         | Por defecto             |
-| --------------------- | ------------------------------------------------------------------- | ----------------------- |
-| `NODE_ENV`            | Entorno: `development`, `production` o `test`                       | `development`           |
-| `PORT`                | Puerto HTTP                                                         | `3000`                  |
-| `LOG_LEVEL`           | Nivel de logs de Pino                                               | `info`                  |
-| `CORS_ORIGIN`         | Orígenes permitidos por CORS, separados por coma                    | `http://localhost:3001` |
-| `DATABASE_URL`        | Cadena de conexión a PostgreSQL (obligatoria; pooled en producción) | —                       |
-| `DIRECT_DATABASE_URL` | Conexión directa para migraciones (opcional, solo producción)       | —                       |
+| Variable                | Descripción                                                         | Por defecto             |
+| ----------------------- | ------------------------------------------------------------------- | ----------------------- |
+| `NODE_ENV`              | Entorno: `development`, `production` o `test`                       | `development`           |
+| `PORT`                  | Puerto HTTP                                                         | `3000`                  |
+| `LOG_LEVEL`             | Nivel de logs de Pino                                               | `info`                  |
+| `CORS_ORIGIN`           | Orígenes permitidos por CORS, separados por coma                    | `http://localhost:3001` |
+| `DATABASE_URL`          | Cadena de conexión a PostgreSQL (obligatoria; pooled en producción) | —                       |
+| `DIRECT_DATABASE_URL`   | Conexión directa para migraciones (opcional, solo producción)       | —                       |
+| `JWT_ACCESS_SECRET`     | Secreto para firmar los JWT (obligatorio, mínimo 32 caracteres)     | —                       |
+| `JWT_ACCESS_EXPIRES_IN` | Vigencia del token (`s`, `m`, `h` o `d`)                            | `7d`                    |
 
 En producción `CORS_ORIGIN` es obligatoria y no admite `*`.
 
@@ -74,6 +79,8 @@ En producción `CORS_ORIGIN` es obligatoria y no admite `*`.
 | ------ | ------------------- | ------------------------------------------ |
 | `GET`  | `/api/health`       | Estado del servicio                        |
 | `GET`  | `/api/health/ready` | Estado de la conexión con la base de datos |
+| `POST` | `/api/auth/login`   | Inicia sesión y devuelve un JWT            |
+| `GET`  | `/api/profile`      | Perfil del usuario autenticado             |
 
 ## Scripts
 
