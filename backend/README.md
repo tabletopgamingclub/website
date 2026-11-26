@@ -96,6 +96,7 @@ Al arrancar, si no existe ningún usuario con rol `ADMIN`, el backend crea uno c
 | `GET`  | `/api/health/ready` | Estado de la conexión con la base de datos |
 | `POST` | `/api/auth/login`   | Inicia sesión y devuelve un JWT            |
 | `GET`  | `/api/profile`      | Perfil del usuario autenticado             |
+| `GET`  | `/api/admin/users`  | Listado de usuarios (solo `ADMIN`)         |
 
 ## Scripts
 

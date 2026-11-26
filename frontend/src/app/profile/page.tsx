@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { isAdmin } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { logoutAction } from "./actions";
 
@@ -22,6 +23,15 @@ export default async function ProfilePage() {
         <p className="text-sm uppercase tracking-wide opacity-60">Mi perfil</p>
         <h1 className="mt-2 text-3xl font-semibold">Hola, {user.name}</h1>
         <p className="mt-2 text-sm opacity-70">Usuario: {user.username}</p>
+
+        {isAdmin(user) && (
+          <Link
+            href="/admin"
+            className="mt-6 inline-block rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          >
+            Panel de administración
+          </Link>
+        )}
 
         <div className="mt-8 flex items-center gap-4">
           <form action={logoutAction}>
