@@ -1,11 +1,13 @@
 import axios from "axios";
 
 import { api } from "./api";
+import type { Role } from "./roles";
 
 export interface AuthenticatedUser {
   id: string;
   username: string;
   name: string;
+  role: Role;
 }
 
 export interface LoginResponse {

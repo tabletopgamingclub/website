@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/session";
 import { logoutAction } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Mi perfil | Club Lúdico",
+  title: "Sección de socio | Club Lúdico",
 };
 
 export default async function ProfilePage() {
@@ -16,10 +16,14 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
+  if (user.role === "ADMIN") {
+    redirect("/admin");
+  }
+
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-16">
       <section className="w-full max-w-md rounded-xl border border-black/10 p-6 shadow-sm dark:border-white/15">
-        <p className="text-sm uppercase tracking-wide opacity-60">Mi perfil</p>
+        <p className="text-sm uppercase tracking-wide opacity-60">Sección de {user.role}</p>
         <h1 className="mt-2 text-3xl font-semibold">Hola, {user.name}</h1>
         <p className="mt-2 text-sm opacity-70">Usuario: {user.username}</p>
 

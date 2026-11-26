@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/session";
+import { homePathForRole } from "@/lib/roles";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export default async function LoginPage() {
   const user = await getCurrentUser();
 
   if (user) {
-    redirect("/profile");
+    redirect(homePathForRole(user.role));
   }
 
   return (
