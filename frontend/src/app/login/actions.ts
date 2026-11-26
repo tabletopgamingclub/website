@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { isUnauthorizedError, loginRequest } from "@/lib/backend";
+import { homePathForRole } from "@/lib/roles";
 import { setSession } from "@/lib/session";
 
 const USERNAME_MIN_LENGTH = 3;
@@ -64,5 +65,5 @@ export async function loginAction(
   }
 
   await setSession(session.token, session.expiresIn);
-  redirect("/profile");
+  redirect(homePathForRole(session.user.role));
 }

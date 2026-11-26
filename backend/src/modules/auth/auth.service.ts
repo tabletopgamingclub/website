@@ -1,3 +1,4 @@
+import type { Role } from "../../generated/prisma/client.js";
 import { AppError } from "../../errors/app-error.js";
 import { verifyPassword } from "../../lib/password/index.js";
 import { prisma } from "../../lib/prisma.js";
@@ -15,6 +16,7 @@ export interface PublicUser {
   id: string;
   username: string;
   name: string;
+  role: Role;
 }
 
 export interface LoginResult {
@@ -41,6 +43,7 @@ export async function login({ username, password }: LoginInput): Promise<LoginRe
       id: user.id,
       username: user.username,
       name: user.name,
+      role: user.role,
     },
   };
 }
