@@ -17,11 +17,6 @@ interface DefaultAdminConfig {
   password: string;
 }
 
-/**
- * Crea el administrador inicial si todavía no existe ningún usuario ADMIN.
- * Si ya hay uno, no modifica nada. Falla con un mensaje claro si faltan variables,
- * si son inválidas o si el usuario indicado ya existe con otro rol.
- */
 export async function ensureDefaultAdmin(): Promise<void> {
   if (await adminExists()) {
     logger.debug("Ya existe un administrador; no se crea el inicial.");
@@ -49,13 +44,11 @@ export async function ensureDefaultAdmin(): Promise<void> {
       select: { id: true },
     });
   } catch (error) {
-    // Otra instancia pudo crear el mismo administrador al mismo tiempo.
     if (getErrorCode(error) === "P2002" && (await adminExists())) {
       logger.debug("Otra instancia creó el administrador inicial.");
       return;
     }
 
-    // No se propaga el error original: el mensaje de Prisma puede incluir los datos del insert.
     throw new Error(
       `No se pudo crear el administrador inicial (código ${getErrorCode(error) ?? "desconocido"}).`,
     );

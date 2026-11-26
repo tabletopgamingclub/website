@@ -163,7 +163,6 @@ export const env = {
       DEFAULT_REFRESH_TOKEN_TTL,
     ),
   },
-  // Opcionales: se validan al arrancar solo si no existe ningún administrador.
   defaultAdmin: {
     username: readOptional(process.env.DEFAULT_ADMIN_USERNAME),
     name: readOptional(process.env.DEFAULT_ADMIN_NAME),

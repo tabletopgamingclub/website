@@ -19,11 +19,7 @@ const start = async (): Promise<void> => {
   } catch (error) {
     logger.fatal({ err: error }, "No se pudo iniciar el servidor");
 
-    try {
-      await prisma.$disconnect();
-    } catch {
-      // El proceso termina de todos modos.
-    }
+    await prisma.$disconnect().catch(() => undefined);
 
     logger.flush(() => process.exit(1));
     return;
@@ -50,7 +46,6 @@ const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
   forceExit.unref();
 
   try {
-    // Puede llegar una señal antes de que el servidor empiece a escuchar.
     if (!server.listening) return;
 
     await new Promise<void>((resolve, reject) => {

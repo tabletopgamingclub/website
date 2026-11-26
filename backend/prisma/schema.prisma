@@ -7,7 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// Placeholder hasta que se integre el #2 (roles de usuario).
 enum Role {
   ADMIN
   SOCIO
