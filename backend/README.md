@@ -32,6 +32,8 @@ src/
 └── generated/      Cliente de Prisma generado (no editar)
 ```
 
+El esquema de Prisma usa archivos múltiples en `prisma/schema/`: `base.prisma` contiene `generator` y `datasource`, y cada dominio tiene su archivo (`users.prisma`, `events.prisma`, `activities.prisma`, `penalties.prisma`). No se edita `prisma/schema.prisma`; los cambios van en el archivo del dominio correspondiente.
+
 ## Puesta en marcha
 
 Desde la raíz del repositorio, levantar la base de datos:
