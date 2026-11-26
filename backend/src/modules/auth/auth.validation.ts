@@ -1,11 +1,11 @@
 import { AppError } from "../../errors/app-error.js";
 import type { LoginInput } from "./auth.service.js";
 
-const USERNAME_MIN_LENGTH = 3;
-const USERNAME_MAX_LENGTH = 32;
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 128;
-const USERNAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
+export const USERNAME_MIN_LENGTH = 3;
+export const USERNAME_MAX_LENGTH = 32;
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MAX_LENGTH = 128;
+export const USERNAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

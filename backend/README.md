@@ -50,6 +50,7 @@ cd backend
 cp .env.example .env
 # Completar JWT_ACCESS_SECRET y JWT_REFRESH_SECRET en .env, por ejemplo:
 # openssl rand -base64 48
+# Completar también DEFAULT_ADMIN_PASSWORD para crear el administrador inicial.
 npm install
 npm run db:migrate
 npm run db:seed
@@ -72,9 +73,20 @@ La API queda disponible en `http://localhost:3000/api`.
 | `JWT_ACCESS_EXPIRES_IN`  | Vigencia del token (`s`, `m`, `h` o `d`)                                       | `7d`                    |
 | `JWT_REFRESH_SECRET`     | Secreto para firmar los tokens de refresco (obligatorio, mínimo 32 caracteres) | —                       |
 | `JWT_REFRESH_EXPIRES_IN` | Vigencia del token de refresco (`s`, `m`, `h` o `d`)                           | `7d`                    |
+| `DEFAULT_ADMIN_USERNAME` | Usuario del administrador inicial (ver abajo)                                  | `admin` en el ejemplo   |
+| `DEFAULT_ADMIN_NAME`     | Nombre del administrador inicial                                               | —                       |
+| `DEFAULT_ADMIN_PASSWORD` | Contraseña del administrador inicial (8 a 128 caracteres)                      | —                       |
 
 En producción `CORS_ORIGIN` es obligatoria y no admite `*`.
 Los secretos de access y refresh deben ser distintos; generá cada uno con `openssl rand -base64 48`.
+
+### Administrador inicial
+
+Al arrancar, si no existe ningún usuario con rol `ADMIN`, el backend crea uno con `DEFAULT_ADMIN_USERNAME`, `DEFAULT_ADMIN_NAME` y `DEFAULT_ADMIN_PASSWORD`, con la contraseña hasheada con Argon2id.
+
+- Si ya existe un `ADMIN`, no se crea otro ni se modifica el existente, y las tres variables pueden faltar.
+- Si no hay `ADMIN` y falta alguna variable, o el usuario indicado ya existe como `SOCIO`, el arranque falla con un mensaje que indica qué corregir.
+- Cambiar `DEFAULT_ADMIN_PASSWORD` después de creado el administrador no cambia su contraseña.
 
 ## Endpoints
 

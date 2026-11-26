@@ -7,11 +7,18 @@ datasource db {
   provider = "postgresql"
 }
 
+// Placeholder hasta que se integre el #2 (roles de usuario).
+enum Role {
+  ADMIN
+  SOCIO
+}
+
 model User {
   id           String   @id @default(uuid())
   username     String   @unique
   name         String
   passwordHash String   @map("password_hash")
+  role         Role     @default(SOCIO)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

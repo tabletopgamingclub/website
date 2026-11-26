@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 
 import { app } from "./app.js";
+import { ensureDefaultAdmin } from "./bootstrap/ensure-default-admin.js";
 import { env } from "./config/env.js";
 import { logger } from "./lib/logger.js";
 import { prisma } from "./lib/prisma.js";
@@ -12,9 +13,26 @@ server.on("error", (error) => {
   process.exit(1);
 });
 
-server.listen(env.port, () => {
-  logger.info(`API disponible en http://localhost:${env.port}/api`);
-});
+const start = async (): Promise<void> => {
+  try {
+    await ensureDefaultAdmin();
+  } catch (error) {
+    logger.fatal({ err: error }, "No se pudo iniciar el servidor");
+
+    try {
+      await prisma.$disconnect();
+    } catch {
+      // El proceso termina de todos modos.
+    }
+
+    logger.flush(() => process.exit(1));
+    return;
+  }
+
+  server.listen(env.port, () => {
+    logger.info(`API disponible en http://localhost:${env.port}/api`);
+  });
+};
 
 let shuttingDown = false;
 
@@ -32,6 +50,9 @@ const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
   forceExit.unref();
 
   try {
+    // Puede llegar una señal antes de que el servidor empiece a escuchar.
+    if (!server.listening) return;
+
     await new Promise<void>((resolve, reject) => {
       server.close((error) => {
         if (error) {
@@ -84,3 +105,5 @@ process.on("unhandledRejection", (reason) => {
   process.exitCode = 1;
   void shutdown("SIGTERM");
 });
+
+void start();

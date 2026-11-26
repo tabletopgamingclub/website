@@ -135,6 +135,12 @@ function parseTokenTtl(name: string, value: string | undefined, defaultValue: st
   return ttl;
 }
 
+function readOptional(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+
+  return trimmed ? trimmed : undefined;
+}
+
 const nodeEnv = parseNodeEnv(process.env.NODE_ENV);
 
 export const env = {
@@ -156,6 +162,12 @@ export const env = {
       process.env.JWT_REFRESH_EXPIRES_IN,
       DEFAULT_REFRESH_TOKEN_TTL,
     ),
+  },
+  // Opcionales: se validan al arrancar solo si no existe ningún administrador.
+  defaultAdmin: {
+    username: readOptional(process.env.DEFAULT_ADMIN_USERNAME),
+    name: readOptional(process.env.DEFAULT_ADMIN_NAME),
+    password: process.env.DEFAULT_ADMIN_PASSWORD || undefined,
   },
 } as const;
 
