@@ -6,82 +6,106 @@ import { env } from "./config/env.js";
 import { logger } from "./lib/logger.js";
 import { prisma } from "./lib/prisma.js";
 
+const FORCE_EXIT_TIMEOUT_MS = 10_000;
+
+type ServerState = "starting" | "running" | "stopping";
+
 const server = createServer(app);
 
-server.on("error", (error) => {
-  logger.fatal({ err: error }, "No se pudo iniciar el servidor");
-  process.exit(1);
-});
+let state: ServerState = "starting";
+let bootstrap: Promise<void> = Promise.resolve();
+let terminating: Promise<void> | undefined;
 
-const start = async (): Promise<void> => {
-  try {
-    await ensureDefaultAdmin();
-  } catch (error) {
-    logger.fatal({ err: error }, "No se pudo iniciar el servidor");
+function terminate(exitCode: number): Promise<void> {
+  terminating ??= (async () => {
+    let code = exitCode;
 
-    await prisma.$disconnect().catch(() => undefined);
-
-    logger.flush(() => process.exit(1));
-    return;
-  }
-
-  server.listen(env.port, () => {
-    logger.info(`API disponible en http://localhost:${env.port}/api`);
-  });
-};
-
-let shuttingDown = false;
-
-const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
-  if (shuttingDown) return;
-
-  shuttingDown = true;
-  logger.info({ signal }, "Cerrando servidor");
-
-  const forceExit = setTimeout(() => {
-    logger.error("Cierre forzado: el servidor no respondió a tiempo");
-    process.exit(1);
-  }, 10_000);
-
-  forceExit.unref();
-
-  try {
-    if (!server.listening) return;
-
-    await new Promise<void>((resolve, reject) => {
-      server.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        resolve();
-      });
-      server.closeIdleConnections();
-    });
-  } catch (error) {
-    logger.error({ err: error }, "Error durante el cierre del servidor");
-    process.exitCode = 1;
-  } finally {
     try {
       await prisma.$disconnect();
     } catch (error) {
       logger.error({ err: error }, "Error al desconectar Prisma");
-      process.exitCode = 1;
+      code = 1;
     }
 
-    const exitCode = process.exitCode ?? 0;
+    logger.flush(() => process.exit(code));
+  })();
 
-    logger.flush(() => {
-      clearTimeout(forceExit);
-      process.exit(exitCode);
+  return terminating;
+}
+
+function closeServer(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    server.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
     });
+    server.closeIdleConnections();
+  });
+}
+
+async function start(): Promise<void> {
+  bootstrap = ensureDefaultAdmin();
+
+  try {
+    await bootstrap;
+  } catch (error) {
+    if (state === "stopping") return;
+
+    logger.fatal({ err: error }, "No se pudo crear el administrador inicial");
+    await terminate(1);
+    return;
   }
-};
+
+  if (state === "stopping") return;
+
+  server.listen(env.port, () => {
+    state = "running";
+    logger.info(`API disponible en http://localhost:${env.port}/api`);
+  });
+}
+
+async function shutdown(reason: string, exitCode = 0): Promise<void> {
+  if (state === "stopping") return;
+
+  const wasRunning = state === "running";
+  state = "stopping";
+  logger.info({ reason }, "Cerrando servidor");
+
+  const forceExit = setTimeout(() => {
+    logger.error("Cierre forzado: el servidor no respondió a tiempo");
+    process.exit(1);
+  }, FORCE_EXIT_TIMEOUT_MS);
+
+  forceExit.unref();
+
+  let code = exitCode;
+
+  await bootstrap.catch(() => undefined);
+
+  if (wasRunning) {
+    try {
+      await closeServer();
+    } catch (error) {
+      logger.error({ err: error }, "Error durante el cierre del servidor");
+      code = 1;
+    }
+  }
+
+  await terminate(code);
+}
+
+server.on("error", (error) => {
+  logger.fatal({ err: error }, "No se pudo iniciar el servidor");
+  void terminate(1);
+});
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
-    if (shuttingDown) {
+    if (state === "stopping") {
       logger.warn({ signal }, "Segundo cierre: salida forzada");
       process.exit(1);
     }
@@ -92,13 +116,12 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 process.on("uncaughtException", (error) => {
   logger.fatal({ err: error }, "Excepción no controlada");
-  process.exit(1);
+  void terminate(1);
 });
 
 process.on("unhandledRejection", (reason) => {
   logger.fatal({ err: reason }, "Promesa rechazada sin manejar");
-  process.exitCode = 1;
-  void shutdown("SIGTERM");
+  void shutdown("unhandledRejection", 1);
 });
 
 void start();

@@ -3,13 +3,7 @@ import { logger } from "../lib/logger.js";
 import { hashPassword } from "../lib/password/index.js";
 import { prisma } from "../lib/prisma.js";
 import { ROLES } from "../lib/roles.js";
-import {
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-  USERNAME_MAX_LENGTH,
-  USERNAME_MIN_LENGTH,
-  USERNAME_PATTERN,
-} from "../modules/auth/auth.validation.js";
+import { validatePassword, validateUsername } from "../modules/auth/auth.validation.js";
 
 interface DefaultAdminConfig {
   username: string;
@@ -66,36 +60,34 @@ async function adminExists(): Promise<boolean> {
   return admin !== null;
 }
 
-function parseDefaultAdminConfig(config: typeof env.defaultAdmin): DefaultAdminConfig {
-  const missing = [
-    !config.username && "DEFAULT_ADMIN_USERNAME",
-    !config.name && "DEFAULT_ADMIN_NAME",
-    !config.password && "DEFAULT_ADMIN_PASSWORD",
-  ].filter((name): name is string => typeof name === "string");
+function parseDefaultAdminConfig({
+  username = "",
+  name = "",
+  password = "",
+}: typeof env.defaultAdmin): DefaultAdminConfig {
+  const fieldErrors: Record<string, string> = {};
+  const usernameError = validateUsername(username);
+  const passwordError = validatePassword(password);
 
-  if (!config.username || !config.name || !config.password) {
-    throw new Error(
-      `No existe ningún administrador y faltan variables para crear el inicial: ${missing.join(", ")}. Definilas en backend/.env.`,
-    );
+  if (usernameError) {
+    fieldErrors.DEFAULT_ADMIN_USERNAME = usernameError;
   }
 
-  const { username, name, password } = config;
-
-  if (username.length < USERNAME_MIN_LENGTH || username.length > USERNAME_MAX_LENGTH) {
-    throw new Error(
-      `DEFAULT_ADMIN_USERNAME debe tener entre ${USERNAME_MIN_LENGTH} y ${USERNAME_MAX_LENGTH} caracteres.`,
-    );
+  if (name.length === 0) {
+    fieldErrors.DEFAULT_ADMIN_NAME = "El nombre es obligatorio.";
   }
 
-  if (!USERNAME_PATTERN.test(username)) {
-    throw new Error(
-      "DEFAULT_ADMIN_USERNAME solo admite letras, números, puntos, guiones y guiones bajos.",
-    );
+  if (passwordError) {
+    fieldErrors.DEFAULT_ADMIN_PASSWORD = passwordError;
   }
 
-  if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
+  if (Object.keys(fieldErrors).length > 0) {
+    const details = Object.entries(fieldErrors)
+      .map(([variable, message]) => `${variable}: ${message}`)
+      .join(" ");
+
     throw new Error(
-      `DEFAULT_ADMIN_PASSWORD debe tener entre ${PASSWORD_MIN_LENGTH} y ${PASSWORD_MAX_LENGTH} caracteres.`,
+      `No existe ningún administrador y las variables del administrador inicial son inválidas. ${details} Corregilas en backend/.env.`,
     );
   }
 
