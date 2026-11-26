@@ -45,6 +45,7 @@ export async function ensureDefaultAdmin(): Promise<void> {
 
     throw new Error(
       `No se pudo crear el administrador inicial (código ${getErrorCode(error) ?? "desconocido"}).`,
+      { cause: error },
     );
   }
 
@@ -96,7 +97,7 @@ function parseDefaultAdminConfig({
 
 function getErrorCode(error: unknown): string | undefined {
   if (typeof error === "object" && error !== null && "code" in error) {
-    const { code } = error as { code: unknown };
+    const { code } = error;
 
     return typeof code === "string" ? code : undefined;
   }

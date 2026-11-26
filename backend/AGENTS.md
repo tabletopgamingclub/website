@@ -28,6 +28,15 @@ src/
 
 Los módulos exponen un router propio. Para agregar uno, crear `src/modules/<nombre>/` con controlador y rutas, y montarlo en `src/routes.ts`.
 
+## Esquema de Prisma
+
+El esquema usa archivos múltiples dentro de `prisma/schema/`:
+
+- `base.prisma` contiene `generator` y `datasource`.
+- Cada dominio tiene su propio archivo (`users.prisma`, `events.prisma`, `activities.prisma`, `penalties.prisma`).
+
+No editar `prisma/schema.prisma`: ya no existe. Todo modelo, enum o campo nuevo va en el archivo `.prisma` del dominio correspondiente, y la migración se genera después de ese cambio.
+
 ## Convenciones
 
 - Mantener la lógica de negocio fuera de los routers y controladores.
